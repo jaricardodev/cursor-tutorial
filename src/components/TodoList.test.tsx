@@ -1,9 +1,12 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { TodoList } from './TodoList';
 
 describe('TodoList', () => {
+  beforeEach(() => {
+    localStorage.clear();
+  });
   it('renders the todo list heading', () => {
     render(<TodoList />);
     expect(screen.getByText('Todo List')).toBeInTheDocument();
@@ -309,6 +312,140 @@ describe('TodoList', () => {
     expect(screen.queryByText('Completed Task')).not.toBeInTheDocument();
     expect(screen.queryByTestId('completed-tasks-section')).not.toBeInTheDocument();
     expect(screen.getByTestId('empty-message')).toBeInTheDocument();
+  });
+
+  describe('localStorage persistence', () => {
+    beforeEach(() => {
+      localStorage.clear();
+    });
+
+    afterEach(() => {
+      localStorage.clear();
+    });
+
+    it('saves tasks to localStorage when a task is added', async () => {
+      const user = userEvent.setup();
+      render(<TodoList />);
+      
+      const input = screen.getByTestId('task-input');
+      const button = screen.getByTestId('task-add-button');
+      
+      await user.type(input, 'New Task');
+      await user.click(button);
+      
+      const stored = localStorage.getItem('todo-app-tasks');
+      expect(stored).toBeTruthy();
+      
+      const tasks = JSON.parse(stored || '[]');
+      expect(tasks).toHaveLength(1);
+      expect(tasks[0].title).toBe('New Task');
+      expect(tasks[0].completed).toBe(false);
+    });
+
+    it('saves tasks to localStorage when a task is toggled', async () => {
+      const user = userEvent.setup();
+      render(<TodoList />);
+      
+      const input = screen.getByTestId('task-input');
+      const button = screen.getByTestId('task-add-button');
+      
+      await user.type(input, 'Task to Toggle');
+      await user.click(button);
+      
+      const taskElement = screen.getByText('Task to Toggle').closest('li');
+      const taskId = taskElement?.getAttribute('data-testid')?.replace('task-', '') || '';
+      const toggleButton = screen.getByTestId(`task-toggle-${taskId}`);
+      await user.click(toggleButton);
+      
+      const stored = localStorage.getItem('todo-app-tasks');
+      const tasks = JSON.parse(stored || '[]');
+      expect(tasks).toHaveLength(1);
+      expect(tasks[0].completed).toBe(true);
+    });
+
+    it('saves tasks to localStorage when a task is deleted', async () => {
+      const user = userEvent.setup();
+      render(<TodoList />);
+      
+      const input = screen.getByTestId('task-input');
+      const button = screen.getByTestId('task-add-button');
+      
+      await user.type(input, 'Task to Delete');
+      await user.click(button);
+      
+      await user.type(input, 'Task to Keep');
+      await user.click(button);
+      
+      const taskElement = screen.getByText('Task to Delete').closest('li');
+      const taskId = taskElement?.getAttribute('data-testid')?.replace('task-', '') || '';
+      const deleteButton = screen.getByTestId(`task-delete-${taskId}`);
+      await user.click(deleteButton);
+      
+      const stored = localStorage.getItem('todo-app-tasks');
+      const tasks = JSON.parse(stored || '[]');
+      expect(tasks).toHaveLength(1);
+      expect(tasks[0].title).toBe('Task to Keep');
+    });
+
+    it('loads tasks from localStorage on mount', () => {
+      const mockTasks = [
+        {
+          id: 'test-id-1',
+          title: 'Stored Active Task',
+          completed: false,
+          createdAt: Date.now(),
+        },
+        {
+          id: 'test-id-2',
+          title: 'Stored Completed Task',
+          completed: true,
+          createdAt: Date.now(),
+        },
+      ];
+      localStorage.setItem('todo-app-tasks', JSON.stringify(mockTasks));
+      
+      render(<TodoList />);
+      
+      expect(screen.getByText('Stored Active Task')).toBeInTheDocument();
+      expect(screen.getByText('Stored Completed Task')).toBeInTheDocument();
+      expect(screen.getByTestId('active-tasks-section')).toBeInTheDocument();
+      expect(screen.getByTestId('completed-tasks-section')).toBeInTheDocument();
+    });
+
+    it('persists tasks across component remounts', async () => {
+      const user = userEvent.setup();
+      const { unmount } = render(<TodoList />);
+      
+      const input = screen.getByTestId('task-input');
+      const button = screen.getByTestId('task-add-button');
+      
+      await user.type(input, 'Persistent Task');
+      await user.click(button);
+      
+      expect(screen.getByText('Persistent Task')).toBeInTheDocument();
+      
+      unmount();
+      
+      const { container } = render(<TodoList />);
+      expect(container).toBeInTheDocument();
+      expect(screen.getByText('Persistent Task')).toBeInTheDocument();
+    });
+
+    it('handles corrupted localStorage gracefully', () => {
+      localStorage.setItem('todo-app-tasks', 'invalid json');
+      
+      render(<TodoList />);
+      
+      expect(screen.getByTestId('empty-message')).toBeInTheDocument();
+    });
+
+    it('handles empty localStorage gracefully', () => {
+      localStorage.clear();
+      
+      render(<TodoList />);
+      
+      expect(screen.getByTestId('empty-message')).toBeInTheDocument();
+    });
   });
 });
 

@@ -1,11 +1,37 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import type { Task } from '../types';
 import { createTask } from '../types';
 import { TaskInput } from './TaskInput';
 import { TaskItem } from './TaskItem';
 
+const STORAGE_KEY = 'todo-app-tasks';
+
+function loadTasksFromStorage(): Task[] {
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (stored) {
+      return JSON.parse(stored) as Task[];
+    }
+  } catch (error) {
+    console.error('Failed to load tasks from localStorage:', error);
+  }
+  return [];
+}
+
+function saveTasksToStorage(tasks: Task[]): void {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
+  } catch (error) {
+    console.error('Failed to save tasks to localStorage:', error);
+  }
+}
+
 export function TodoList() {
-  const [tasks, setTasks] = useState<Task[]>([]);
+  const [tasks, setTasks] = useState<Task[]>(() => loadTasksFromStorage());
+
+  useEffect(() => {
+    saveTasksToStorage(tasks);
+  }, [tasks]);
 
   const activeTasks = useMemo(
     () => tasks.filter((task) => !task.completed),

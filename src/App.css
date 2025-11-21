@@ -1,42 +1,268 @@
-#root {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 2rem;
+.app {
+  background: var(--card-bg);
+  border-radius: 16px;
+  box-shadow: 0 20px 60px var(--shadow);
+  padding: 2.5rem;
+  margin: 2rem 0;
+  position: relative;
+  transition: background 0.3s ease, box-shadow 0.3s ease;
+}
+
+/* Theme toggle button */
+.theme-toggle {
+  position: absolute;
+  top: 1.5rem;
+  right: 1.5rem;
+  background: var(--hover-bg);
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 0.75rem;
+  border-radius: 50%;
+  width: 2.5rem;
+  height: 2.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  font-size: 1.125rem;
+}
+
+.theme-toggle:hover {
+  background: var(--border-color);
+  transform: scale(1.1);
+}
+
+.theme-toggle:active {
+  transform: scale(0.95);
+}
+
+h1 {
+  font-size: 2.5rem;
+  font-weight: 700;
+  margin: 0 0 1.5rem 0;
+  color: var(--text-primary);
   text-align: center;
+  transition: color 0.3s ease;
 }
 
-.logo {
-  height: 6em;
-  padding: 1.5em;
-  will-change: filter;
-  transition: filter 300ms;
-}
-.logo:hover {
-  filter: drop-shadow(0 0 2em #646cffaa);
-}
-.logo.react:hover {
-  filter: drop-shadow(0 0 2em #61dafbaa);
-}
-
-@keyframes logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+h2 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin: 0 0 1rem 0;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  transition: color 0.3s ease;
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  a:nth-of-type(2) .logo {
-    animation: logo-spin infinite 20s linear;
-  }
+button.collapse-toggle {
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.875rem;
+  margin-right: 0.25rem;
 }
 
-.card {
-  padding: 2em;
+button.collapse-toggle:hover {
+  background: var(--hover-bg);
+  color: var(--text-primary);
 }
 
-.read-the-docs {
-  color: #888;
+button.collapse-toggle:active {
+  transform: scale(0.95);
+}
+
+button.collapse-toggle i {
+  transition: transform 0.2s;
+}
+
+ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+li {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.875rem;
+  margin-bottom: 0.5rem;
+  background: var(--list-item-bg);
+  border-radius: 8px;
+  transition: background-color 0.2s;
+}
+
+li:hover {
+  background: var(--list-item-hover);
+}
+
+li span {
+  flex: 1;
+  font-size: 1rem;
+  color: var(--text-primary);
+  transition: color 0.3s ease;
+}
+
+/* Custom checkbox styling */
+input[type="radio"] {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 2px solid #e53e3e;
+  background: var(--input-bg);
+  cursor: pointer;
+  position: relative;
+  flex-shrink: 0;
+  transition: all 0.2s;
+}
+
+input[type="radio"]:hover {
+  transform: scale(1.1);
+}
+
+input[type="radio"]:checked {
+  background: #48bb78;
+  border-color: #48bb78;
+}
+
+input[type="radio"]:checked::after {
+  content: '✓';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: white;
+  font-size: 14px;
+  font-weight: bold;
+  line-height: 1;
+}
+
+/* Delete button styling */
+button[data-testid^="task-delete"] {
+  background: transparent;
+  border: none;
+  color: #e53e3e;
+  cursor: pointer;
+  padding: 0.5rem;
+  border-radius: 4px;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+}
+
+[data-theme="dark"] button[data-testid^="task-delete"]:hover {
+  background: rgba(229, 62, 62, 0.2);
+}
+
+[data-theme="light"] button[data-testid^="task-delete"]:hover {
+  background: #fed7d7;
+}
+
+button[data-testid^="task-delete"]:hover {
+  transform: scale(1.1);
+}
+
+button[data-testid^="task-delete"]:active {
+  transform: scale(0.95);
+}
+
+button[data-testid^="task-delete"] i {
+  font-size: 1rem;
+}
+
+/* Task input form */
+form[data-testid="task-input-form"] {
+  display: flex;
+  gap: 0.75rem;
+  margin-bottom: 2rem;
+}
+
+input[data-testid="task-input"] {
+  flex: 1;
+  padding: 0.875rem 1rem;
+  border: 2px solid var(--border-color);
+  background: var(--input-bg);
+  color: var(--text-primary);
+  border-radius: 8px;
+  font-size: 1rem;
+  font-family: inherit;
+  transition: border-color 0.2s, background 0.3s ease, color 0.3s ease;
+}
+
+input[data-testid="task-input"]:focus {
+  outline: none;
+  border-color: #667eea;
+}
+
+input[data-testid="task-input"]::placeholder {
+  color: var(--text-muted);
+}
+
+button[data-testid="task-add-button"] {
+  padding: 0.875rem 1.5rem;
+  background: #667eea;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+button[data-testid="task-add-button"]:hover {
+  background: #5568d3;
+}
+
+button[data-testid="task-add-button"]:active {
+  transform: scale(0.98);
+}
+
+/* Sections */
+[data-testid="active-tasks-section"],
+[data-testid="completed-tasks-section"] {
+  margin-bottom: 2rem;
+}
+
+[data-testid="active-tasks-section"] h2,
+[data-testid="completed-tasks-section"] h2 {
+  margin-bottom: 1rem;
+}
+
+[data-testid="empty-message"] {
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 1.1rem;
+  padding: 2rem;
+  background: var(--list-item-bg);
+  border-radius: 8px;
+  transition: color 0.3s ease, background 0.3s ease;
+}
+
+/* Counter styling */
+[data-testid="active-tasks-count"],
+[data-testid="completed-tasks-count"] {
+  font-size: 1rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  background: var(--hover-bg);
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  transition: color 0.3s ease, background 0.3s ease;
 }

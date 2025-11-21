@@ -36,7 +36,7 @@ export function TaskItem({ task, onToggle, onDelete }: TaskItemProps) {
         data-testid={`task-delete-${task.id}`}
         aria-label={`Delete task: ${task.title}`}
       >
-        Delete
+        <i className="fas fa-trash" aria-hidden="true"></i>
       </button>
     </li>
   );

@@ -37,7 +37,7 @@ describe('TaskItem', () => {
     
     const deleteButton = screen.getByTestId('task-delete-test-id-1');
     expect(deleteButton).toBeInTheDocument();
-    expect(deleteButton).toHaveTextContent('Delete');
+    expect(deleteButton.querySelector('i.fa-trash')).toBeInTheDocument();
   });
 
   it('radio button is unchecked for active task', () => {

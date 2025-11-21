@@ -28,6 +28,8 @@ function saveTasksToStorage(tasks: Task[]): void {
 
 export function TodoList() {
   const [tasks, setTasks] = useState<Task[]>(() => loadTasksFromStorage());
+  const [isActiveCollapsed, setIsActiveCollapsed] = useState(false);
+  const [isCompletedCollapsed, setIsCompletedCollapsed] = useState(false);
 
   useEffect(() => {
     saveTasksToStorage(tasks);
@@ -75,37 +77,59 @@ export function TodoList() {
           {activeTasks.length > 0 && (
             <div data-testid="active-tasks-section">
               <h2>
+                <button
+                  type="button"
+                  onClick={() => setIsActiveCollapsed(!isActiveCollapsed)}
+                  className="collapse-toggle"
+                  data-testid="active-tasks-toggle"
+                  aria-label={isActiveCollapsed ? 'Expand active tasks' : 'Collapse active tasks'}
+                >
+                  <i className={`fas fa-chevron-${isActiveCollapsed ? 'down' : 'up'}`}></i>
+                </button>
                 Active Tasks{' '}
                 <span data-testid="active-tasks-count">({activeTasks.length})</span>
               </h2>
-              <ul data-testid="task-list">
-                {activeTasks.map((task) => (
-                  <TaskItem
-                    key={task.id}
-                    task={task}
-                    onToggle={handleToggleTask}
-                    onDelete={handleDeleteTask}
-                  />
-                ))}
-              </ul>
+              {!isActiveCollapsed && (
+                <ul data-testid="task-list">
+                  {activeTasks.map((task) => (
+                    <TaskItem
+                      key={task.id}
+                      task={task}
+                      onToggle={handleToggleTask}
+                      onDelete={handleDeleteTask}
+                    />
+                  ))}
+                </ul>
+              )}
             </div>
           )}
           {completedTasks.length > 0 && (
             <div data-testid="completed-tasks-section">
               <h2>
+                <button
+                  type="button"
+                  onClick={() => setIsCompletedCollapsed(!isCompletedCollapsed)}
+                  className="collapse-toggle"
+                  data-testid="completed-tasks-toggle"
+                  aria-label={isCompletedCollapsed ? 'Expand completed tasks' : 'Collapse completed tasks'}
+                >
+                  <i className={`fas fa-chevron-${isCompletedCollapsed ? 'down' : 'up'}`}></i>
+                </button>
                 Completed Tasks{' '}
                 <span data-testid="completed-tasks-count">({completedTasks.length})</span>
               </h2>
-              <ul data-testid="completed-task-list">
-                {completedTasks.map((task) => (
-                  <TaskItem
-                    key={task.id}
-                    task={task}
-                    onToggle={handleToggleTask}
-                    onDelete={handleDeleteTask}
-                  />
-                ))}
-              </ul>
+              {!isCompletedCollapsed && (
+                <ul data-testid="completed-task-list">
+                  {completedTasks.map((task) => (
+                    <TaskItem
+                      key={task.id}
+                      task={task}
+                      onToggle={handleToggleTask}
+                      onDelete={handleDeleteTask}
+                    />
+                  ))}
+                </ul>
+              )}
             </div>
           )}
         </>

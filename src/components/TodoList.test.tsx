@@ -672,5 +672,82 @@ describe('TodoList', () => {
       expect(completedCount).toHaveTextContent('(2)');
     });
   });
+
+  describe('collapsible lists', () => {
+    it('can collapse and expand active tasks list', async () => {
+      const user = userEvent.setup();
+      render(<TodoList />);
+      
+      const input = screen.getByTestId('task-input');
+      const button = screen.getByTestId('task-add-button');
+      
+      await user.type(input, 'Active Task');
+      await user.click(button);
+      
+      expect(screen.getByTestId('task-list')).toBeInTheDocument();
+      expect(screen.getByText('Active Task')).toBeInTheDocument();
+      
+      const toggleButton = screen.getByTestId('active-tasks-toggle');
+      await user.click(toggleButton);
+      
+      expect(screen.queryByTestId('task-list')).not.toBeInTheDocument();
+      expect(screen.queryByText('Active Task')).not.toBeInTheDocument();
+      
+      await user.click(toggleButton);
+      
+      expect(screen.getByTestId('task-list')).toBeInTheDocument();
+      expect(screen.getByText('Active Task')).toBeInTheDocument();
+    });
+
+    it('can collapse and expand completed tasks list', async () => {
+      const user = userEvent.setup();
+      render(<TodoList />);
+      
+      const input = screen.getByTestId('task-input');
+      const button = screen.getByTestId('task-add-button');
+      
+      await user.type(input, 'Task to Complete');
+      await user.click(button);
+      
+      const taskElement = screen.getByText('Task to Complete').closest('li');
+      const taskId = taskElement?.getAttribute('data-testid')?.replace('task-', '') || '';
+      const toggleButton = screen.getByTestId(`task-toggle-${taskId}`);
+      await user.click(toggleButton);
+      
+      expect(screen.getByTestId('completed-task-list')).toBeInTheDocument();
+      expect(screen.getByText('Task to Complete')).toBeInTheDocument();
+      
+      const collapseToggle = screen.getByTestId('completed-tasks-toggle');
+      await user.click(collapseToggle);
+      
+      expect(screen.queryByTestId('completed-task-list')).not.toBeInTheDocument();
+      expect(screen.queryByText('Task to Complete')).not.toBeInTheDocument();
+      
+      await user.click(collapseToggle);
+      
+      expect(screen.getByTestId('completed-task-list')).toBeInTheDocument();
+      expect(screen.getByText('Task to Complete')).toBeInTheDocument();
+    });
+
+    it('shows chevron up icon when expanded and chevron down when collapsed', async () => {
+      const user = userEvent.setup();
+      render(<TodoList />);
+      
+      const input = screen.getByTestId('task-input');
+      const button = screen.getByTestId('task-add-button');
+      
+      await user.type(input, 'Test Task');
+      await user.click(button);
+      
+      const toggleButton = screen.getByTestId('active-tasks-toggle');
+      const chevronIcon = toggleButton.querySelector('i');
+      
+      expect(chevronIcon).toHaveClass('fa-chevron-up');
+      
+      await user.click(toggleButton);
+      
+      expect(chevronIcon).toHaveClass('fa-chevron-down');
+    });
+  });
 });
 

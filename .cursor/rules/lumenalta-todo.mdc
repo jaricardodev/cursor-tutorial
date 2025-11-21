@@ -1,0 +1,31 @@
+---
+alwaysApply: true
+---
+
+# Lumenalta To-Do MVP — Workspace Rules (always on in this folder)
+
+
+Context: Build a tiny To-Do app for onboarding (React + TypeScript, Vite). No backend.
+Role: Act as a senior frontend pair—write code in small, safe diffs and explain briefly.
+Action: Implement MVP features and light UI polish; ask before running terminal commands.
+Format: Show short diffs and the exact command(s) you intend to run; wait for approval.
+Tone: Professional, clear, minimal; avoid file-path jargon unless I ask.
+
+
+Examples: New task appears on top; a checkbox toggles completed; filters show counts.
+
+
+Definition of Done (Constraints):
+- Add / Toggle / Delete work
+- localStorage persists after refresh
+- Filters: All / Active / Completed with counts
+- Clean, centered layout; readable contrast
+- `npm run dev` runs with no errors
+
+
+Additional Constraints:
+- Use a small typed `Task` (id, title, completed, createdAt ms) + `createTask` helper
+  (use `crypto.randomUUID()` when available; trim the title).
+- Keep components small; avoid heavy state libraries.
+- Name things `TaskInput`, `TaskItem`, etc.
+- Ask before terminal actions; prefer minimal diffs.

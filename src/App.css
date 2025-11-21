@@ -266,3 +266,45 @@ button[data-testid="task-add-button"]:active {
   border-radius: 12px;
   transition: color 0.3s ease, background 0.3s ease;
 }
+
+/* Error message styling */
+[data-testid="error-message"] {
+  background: var(--list-item-bg);
+  border: 2px solid #e53e3e;
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  color: #e53e3e;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: background 0.3s ease;
+}
+
+[data-testid="error-message"] button {
+  margin-left: auto;
+  padding: 0.5rem 1rem;
+  background: #e53e3e;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.875rem;
+  font-weight: 600;
+  transition: background-color 0.2s;
+}
+
+[data-testid="error-message"] button:hover {
+  background: #c53030;
+}
+
+[data-testid="error-message"] button:active {
+  transform: scale(0.98);
+}
+
+[data-testid="loading-message"] {
+  text-align: center;
+  color: var(--text-muted);
+  padding: 2rem;
+  transition: color 0.3s ease;
+}

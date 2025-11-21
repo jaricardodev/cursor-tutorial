@@ -6,7 +6,31 @@ import type { Task } from './types.js';
 const app = express();
 const PORT = 3001;
 
-app.use(cors({ origin: 'http://localhost:5173' }));
+// CORS configuration
+const corsOptions = {
+  origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) {
+      return callback(null, true);
+    }
+    // Allow localhost on any port for development
+    if (origin.startsWith('http://localhost:') || origin.startsWith('http://127.0.0.1:')) {
+      return callback(null, true);
+    }
+    // Allow specific production origin
+    if (origin === 'http://localhost:5173') {
+      return callback(null, true);
+    }
+    callback(new Error('Not allowed by CORS'));
+  },
+  methods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
+  exposedHeaders: ['Content-Type'],
+  credentials: false,
+  optionsSuccessStatus: 200, // Some legacy browsers (IE11, various SmartTVs) choke on 204
+};
+
+app.use(cors(corsOptions));
 app.use(express.json());
 
 // Health check
@@ -102,7 +126,8 @@ app.delete('/tasks/:id', (req, res) => {
   }
 });
 
-app.listen(PORT, () => {
+app.listen(PORT, '0.0.0.0', () => {
   console.log(`Server running on http://localhost:${PORT}`);
+  console.log(`Server also accessible on http://127.0.0.1:${PORT}`);
 });
 

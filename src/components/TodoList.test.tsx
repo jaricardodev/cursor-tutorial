@@ -1,32 +1,104 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { TodoList } from './TodoList';
+import * as api from '../services/api';
+
+// Mock the API module
+vi.mock('../services/api', () => ({
+  fetchTasks: vi.fn(),
+  createTask: vi.fn(),
+  toggleTask: vi.fn(),
+  deleteTask: vi.fn(),
+  ApiError: class ApiError extends Error {
+    status?: number;
+    constructor(message: string, status?: number) {
+      super(message);
+      this.name = 'ApiError';
+      this.status = status;
+    }
+  },
+}));
 
 describe('TodoList', () => {
+  let mockTasks: any[] = [];
+  
   beforeEach(() => {
     localStorage.clear();
     window.confirm = vi.fn(() => true);
+    mockTasks = [];
+    
+    vi.mocked(api.fetchTasks).mockImplementation(async () => {
+      // Return tasks sorted by newest first (like the backend)
+      return [...mockTasks].sort((a, b) => b.createdAtMs - a.createdAtMs);
+    });
+    
+    vi.mocked(api.createTask).mockImplementation(async (title: string) => {
+      const newTask = {
+        id: crypto.randomUUID(),
+        title: title.trim(),
+        completed: false,
+        createdAtMs: Date.now(),
+      };
+      mockTasks.unshift(newTask); // Add to beginning (newest first)
+      return newTask;
+    });
+    
+    vi.mocked(api.toggleTask).mockImplementation(async (id: string) => {
+      const task = mockTasks.find((t) => t.id === id);
+      if (task) {
+        task.completed = !task.completed;
+        // Update createdAtMs to make it newest when toggled (moves to top)
+        task.createdAtMs = Date.now();
+        return { ...task };
+      }
+      throw new api.ApiError('Task not found', 404);
+    });
+    
+    vi.mocked(api.deleteTask).mockImplementation(async (id: string) => {
+      const index = mockTasks.findIndex((t) => t.id === id);
+      if (index !== -1) {
+        mockTasks.splice(index, 1);
+      }
+    });
   });
-  it('renders the todo list heading', () => {
+  
+  it('renders the todo list heading', async () => {
     render(<TodoList />);
-    expect(screen.getByText('Todo List')).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByText('Todo List')).toBeInTheDocument();
+    });
   });
 
-  it('shows empty message when no tasks', () => {
+  it('shows empty message when no tasks', async () => {
     render(<TodoList />);
-    expect(screen.getByTestId('empty-message')).toBeInTheDocument();
-    expect(screen.getByText(/No tasks yet/i)).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByTestId('empty-message')).toBeInTheDocument();
+      expect(screen.getByText(/No tasks yet/i)).toBeInTheDocument();
+    });
   });
 
-  it('renders the todo list container', () => {
+  it('renders the todo list container', async () => {
     render(<TodoList />);
-    expect(screen.getByTestId('todo-list')).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByTestId('todo-list')).toBeInTheDocument();
+    });
   });
 
   it('adds a new task when form is submitted', async () => {
     const user = userEvent.setup();
+    const mockTask = {
+      id: 'test-id-1',
+      title: 'First Task',
+      completed: false,
+      createdAtMs: Date.now(),
+    };
+    vi.mocked(api.createTask).mockResolvedValueOnce(mockTask);
+    
     render(<TodoList />);
+    await waitFor(() => {
+      expect(screen.queryByTestId('loading-message')).not.toBeInTheDocument();
+    });
     
     const input = screen.getByTestId('task-input');
     const button = screen.getByTestId('task-add-button');
@@ -34,7 +106,9 @@ describe('TodoList', () => {
     await user.type(input, 'First Task');
     await user.click(button);
     
-    expect(screen.getByText('First Task')).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByText('First Task')).toBeInTheDocument();
+    });
     expect(screen.queryByTestId('empty-message')).not.toBeInTheDocument();
   });
 
@@ -162,10 +236,16 @@ describe('TodoList', () => {
     const completedToggle = screen.getByTestId(`task-toggle-${completedFirstTaskId}`);
     await user.click(completedToggle);
     
-    // Verify First Active is now at the top of active list
+    // Wait for tasks to reload after toggle
+    await waitFor(() => {
+      const activeList = screen.getByTestId('task-list');
+      const taskItems = activeList.querySelectorAll('li[data-testid^="task-"]');
+      expect(taskItems).toHaveLength(2);
+    });
+    
+    // Verify First Active is now at the top of active list (newest first after toggle)
     const activeList = screen.getByTestId('task-list');
     const taskItems = activeList.querySelectorAll('li[data-testid^="task-"]');
-    expect(taskItems).toHaveLength(2);
     expect(taskItems[0]).toHaveTextContent('First Active');
     expect(taskItems[1]).toHaveTextContent('Second Active');
   });
@@ -191,6 +271,12 @@ describe('TodoList', () => {
     
     const firstToggle = screen.getByTestId(`task-toggle-${firstTaskId}`);
     await user.click(firstToggle);
+    
+    // Wait for tasks to reload after toggle
+    await waitFor(() => {
+      const completedList = screen.getByTestId('completed-task-list');
+      expect(completedList).toBeInTheDocument();
+    });
     
     const completedList = screen.getByTestId('completed-task-list');
     const taskItems = completedList.querySelectorAll('li[data-testid^="task-"]');
@@ -339,137 +425,117 @@ describe('TodoList', () => {
     expect(screen.queryByTestId('empty-message')).not.toBeInTheDocument();
   });
 
-  describe('localStorage persistence', () => {
-    beforeEach(() => {
-      localStorage.clear();
-    });
-
-    afterEach(() => {
-      localStorage.clear();
-    });
-
-    it('saves tasks to localStorage when a task is added', async () => {
-      const user = userEvent.setup();
+  describe('API error handling', () => {
+    it('shows error message when API is down on load', async () => {
+      vi.mocked(api.fetchTasks).mockRejectedValueOnce(
+        new api.ApiError('Unable to connect to server. Please check if the backend is running.')
+      );
+      
       render(<TodoList />);
+      
+      await waitFor(() => {
+        expect(screen.getByTestId('error-message')).toBeInTheDocument();
+        expect(screen.getByText(/Unable to connect to server/i)).toBeInTheDocument();
+      });
+    });
+
+    it('shows error message when creating task fails', async () => {
+      const user = userEvent.setup();
+      vi.mocked(api.createTask).mockRejectedValueOnce(
+        new api.ApiError('Failed to create task')
+      );
+      
+      render(<TodoList />);
+      await waitFor(() => {
+        expect(screen.queryByTestId('loading-message')).not.toBeInTheDocument();
+      });
       
       const input = screen.getByTestId('task-input');
       const button = screen.getByTestId('task-add-button');
       
-      await user.type(input, 'New Task');
+      await user.type(input, 'Test Task');
       await user.click(button);
       
-      const stored = localStorage.getItem('todo-app-tasks');
-      expect(stored).toBeTruthy();
-      
-      const tasks = JSON.parse(stored || '[]');
-      expect(tasks).toHaveLength(1);
-      expect(tasks[0].title).toBe('New Task');
-      expect(tasks[0].completed).toBe(false);
+      await waitFor(() => {
+        expect(screen.getByTestId('error-message')).toBeInTheDocument();
+        expect(screen.getByText('Failed to create task')).toBeInTheDocument();
+      });
     });
 
-    it('saves tasks to localStorage when a task is toggled', async () => {
+    it('shows error message when toggling task fails', async () => {
       const user = userEvent.setup();
+      const mockTask = {
+        id: 'test-id-1',
+        title: 'Test Task',
+        completed: false,
+        createdAtMs: Date.now(),
+      };
+      vi.mocked(api.fetchTasks).mockResolvedValueOnce([mockTask]);
+      vi.mocked(api.toggleTask).mockRejectedValueOnce(
+        new api.ApiError('Failed to toggle task')
+      );
+      
       render(<TodoList />);
+      await waitFor(() => {
+        expect(screen.getByText('Test Task')).toBeInTheDocument();
+      });
       
-      const input = screen.getByTestId('task-input');
-      const button = screen.getByTestId('task-add-button');
-      
-      await user.type(input, 'Task to Toggle');
-      await user.click(button);
-      
-      const taskElement = screen.getByText('Task to Toggle').closest('li');
+      const taskElement = screen.getByText('Test Task').closest('li');
       const taskId = taskElement?.getAttribute('data-testid')?.replace('task-', '') || '';
       const toggleButton = screen.getByTestId(`task-toggle-${taskId}`);
       await user.click(toggleButton);
       
-      const stored = localStorage.getItem('todo-app-tasks');
-      const tasks = JSON.parse(stored || '[]');
-      expect(tasks).toHaveLength(1);
-      expect(tasks[0].completed).toBe(true);
+      await waitFor(() => {
+        expect(screen.getByTestId('error-message')).toBeInTheDocument();
+        expect(screen.getByText('Failed to toggle task')).toBeInTheDocument();
+      });
     });
 
-    it('saves tasks to localStorage when a task is deleted', async () => {
-      const user = userEvent.setup();
+    it('allows retry after error', async () => {
+      vi.mocked(api.fetchTasks)
+        .mockRejectedValueOnce(new api.ApiError('Connection failed'))
+        .mockResolvedValueOnce([]);
+      
       render(<TodoList />);
       
-      const input = screen.getByTestId('task-input');
-      const button = screen.getByTestId('task-add-button');
+      await waitFor(() => {
+        expect(screen.getByTestId('error-message')).toBeInTheDocument();
+      });
       
-      await user.type(input, 'Task to Delete');
-      await user.click(button);
+      const retryButton = screen.getByText('Retry');
+      await userEvent.click(retryButton);
       
-      await user.type(input, 'Task to Keep');
-      await user.click(button);
-      
-      const taskElement = screen.getByText('Task to Delete').closest('li');
-      const taskId = taskElement?.getAttribute('data-testid')?.replace('task-', '') || '';
-      const deleteButton = screen.getByTestId(`task-delete-${taskId}`);
-      await user.click(deleteButton);
-      
-      const stored = localStorage.getItem('todo-app-tasks');
-      const tasks = JSON.parse(stored || '[]');
-      expect(tasks).toHaveLength(1);
-      expect(tasks[0].title).toBe('Task to Keep');
+      await waitFor(() => {
+        expect(screen.queryByTestId('error-message')).not.toBeInTheDocument();
+        expect(screen.getByTestId('empty-message')).toBeInTheDocument();
+      });
     });
 
-    it('loads tasks from localStorage on mount', () => {
+    it('loads tasks from API on mount', async () => {
       const mockTasks = [
         {
           id: 'test-id-1',
           title: 'Stored Active Task',
           completed: false,
-          createdAt: Date.now(),
+          createdAtMs: Date.now(),
         },
         {
           id: 'test-id-2',
           title: 'Stored Completed Task',
           completed: true,
-          createdAt: Date.now(),
+          createdAtMs: Date.now(),
         },
       ];
-      localStorage.setItem('todo-app-tasks', JSON.stringify(mockTasks));
+      vi.mocked(api.fetchTasks).mockResolvedValueOnce(mockTasks);
       
       render(<TodoList />);
       
-      expect(screen.getByText('Stored Active Task')).toBeInTheDocument();
-      expect(screen.getByText('Stored Completed Task')).toBeInTheDocument();
-      expect(screen.getByTestId('active-tasks-section')).toBeInTheDocument();
-      expect(screen.getByTestId('completed-tasks-section')).toBeInTheDocument();
-    });
-
-    it('persists tasks across component remounts', async () => {
-      const user = userEvent.setup();
-      const { unmount } = render(<TodoList />);
-      
-      const input = screen.getByTestId('task-input');
-      const button = screen.getByTestId('task-add-button');
-      
-      await user.type(input, 'Persistent Task');
-      await user.click(button);
-      
-      expect(screen.getByText('Persistent Task')).toBeInTheDocument();
-      
-      unmount();
-      
-      const { container } = render(<TodoList />);
-      expect(container).toBeInTheDocument();
-      expect(screen.getByText('Persistent Task')).toBeInTheDocument();
-    });
-
-    it('handles corrupted localStorage gracefully', () => {
-      localStorage.setItem('todo-app-tasks', 'invalid json');
-      
-      render(<TodoList />);
-      
-      expect(screen.getByTestId('empty-message')).toBeInTheDocument();
-    });
-
-    it('handles empty localStorage gracefully', () => {
-      localStorage.clear();
-      
-      render(<TodoList />);
-      
-      expect(screen.getByTestId('empty-message')).toBeInTheDocument();
+      await waitFor(() => {
+        expect(screen.getByText('Stored Active Task')).toBeInTheDocument();
+        expect(screen.getByText('Stored Completed Task')).toBeInTheDocument();
+        expect(screen.getByTestId('active-tasks-section')).toBeInTheDocument();
+        expect(screen.getByTestId('completed-tasks-section')).toBeInTheDocument();
+      });
     });
   });
 

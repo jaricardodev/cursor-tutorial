@@ -9,7 +9,7 @@ describe('TaskItem', () => {
     id: 'test-id-1',
     title: 'Test Task',
     completed: false,
-    createdAt: Date.now(),
+    createdAtMs: Date.now(),
   };
 
   it('renders task title', () => {

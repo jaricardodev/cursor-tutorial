@@ -2,15 +2,11 @@ export type Task = {
   id: string;
   title: string;
   completed: boolean;
-  createdAt: number;
+  createdAtMs: number;
 };
 
-export function createTask(title: string): Task {
-  return {
-    id: crypto.randomUUID(),
-    title: title.trim(),
-    completed: false,
-    createdAt: Date.now(),
-  };
+// Helper to convert createdAtMs to createdAt for backward compatibility if needed
+export function getCreatedAt(task: Task): number {
+  return task.createdAtMs;
 }
 

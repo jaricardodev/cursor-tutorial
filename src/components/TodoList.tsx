@@ -1,39 +1,39 @@
 import { useState, useMemo, useEffect } from 'react';
 import type { Task } from '../types';
-import { createTask } from '../types';
 import { TaskInput } from './TaskInput';
 import { TaskItem } from './TaskItem';
-
-const STORAGE_KEY = 'todo-app-tasks';
-
-function loadTasksFromStorage(): Task[] {
-  try {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) {
-      return JSON.parse(stored) as Task[];
-    }
-  } catch (error) {
-    console.error('Failed to load tasks from localStorage:', error);
-  }
-  return [];
-}
-
-function saveTasksToStorage(tasks: Task[]): void {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
-  } catch (error) {
-    console.error('Failed to save tasks to localStorage:', error);
-  }
-}
+import { fetchTasks, createTask, toggleTask, deleteTask, ApiError } from '../services/api';
 
 export function TodoList() {
-  const [tasks, setTasks] = useState<Task[]>(() => loadTasksFromStorage());
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [isActiveCollapsed, setIsActiveCollapsed] = useState(false);
   const [isCompletedCollapsed, setIsCompletedCollapsed] = useState(false);
 
   useEffect(() => {
-    saveTasksToStorage(tasks);
-  }, [tasks]);
+    loadTasks();
+  }, []);
+
+  const loadTasks = async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const fetchedTasks = await fetchTasks();
+      setTasks(fetchedTasks);
+    } catch (err) {
+      const errorMessage = err instanceof ApiError ? err.message : 'Failed to load tasks';
+      setError(errorMessage);
+      console.error('Failed to load tasks:', err);
+      // Log additional debugging info
+      if (err instanceof ApiError && err.message.includes('Unable to connect')) {
+        console.error('Backend server should be running on http://localhost:3001');
+        console.error('Run: npm run start:backend or npm run dev:backend');
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const activeTasks = useMemo(
     () => tasks.filter((task) => !task.completed),
@@ -44,12 +44,23 @@ export function TodoList() {
     [tasks]
   );
 
-  const handleAddTask = (title: string) => {
-    const newTask = createTask(title);
-    setTasks((prevTasks) => [newTask, ...prevTasks]);
+  const handleAddTask = async (title: string) => {
+    setError(null);
+    try {
+      const newTask = await createTask(title);
+      setTasks((prevTasks) => [newTask, ...prevTasks]);
+    } catch (err) {
+      const errorMessage = err instanceof ApiError ? err.message : 'Failed to create task';
+      setError(errorMessage);
+      console.error('Failed to create task:', err);
+    }
   };
 
-  const handleToggleTask = (taskId: string) => {
+  const handleToggleTask = async (taskId: string) => {
+    setError(null);
+    const previousTasks = [...tasks];
+    
+    // Optimistic update
     setTasks((prevTasks) => {
       const taskIndex = prevTasks.findIndex((task) => task.id === taskId);
       if (taskIndex === -1) return prevTasks;
@@ -60,17 +71,55 @@ export function TodoList() {
 
       return [updatedTask, ...otherTasks];
     });
+
+    try {
+      await toggleTask(taskId);
+      // Reload all tasks to maintain server-side ordering (newest first)
+      const fetchedTasks = await fetchTasks();
+      setTasks(fetchedTasks);
+    } catch (err) {
+      // Revert optimistic update on error
+      setTasks(previousTasks);
+      const errorMessage = err instanceof ApiError ? err.message : 'Failed to toggle task';
+      setError(errorMessage);
+      console.error('Failed to toggle task:', err);
+    }
   };
 
-  const handleDeleteTask = (taskId: string) => {
+  const handleDeleteTask = async (taskId: string) => {
+    setError(null);
+    const previousTasks = [...tasks];
+    
+    // Optimistic update
     setTasks((prevTasks) => prevTasks.filter((task) => task.id !== taskId));
+
+    try {
+      await deleteTask(taskId);
+    } catch (err) {
+      // Revert optimistic update on error
+      setTasks(previousTasks);
+      const errorMessage = err instanceof ApiError ? err.message : 'Failed to delete task';
+      setError(errorMessage);
+      console.error('Failed to delete task:', err);
+    }
   };
 
   return (
     <div data-testid="todo-list">
       <h1>Todo List</h1>
+      {error && (
+        <div data-testid="error-message">
+          <i className="fas fa-exclamation-triangle"></i>
+          <span>{error}</span>
+          <button onClick={loadTasks} type="button">
+            Retry
+          </button>
+        </div>
+      )}
       <TaskInput onAddTask={handleAddTask} />
-      {activeTasks.length === 0 && completedTasks.length === 0 ? (
+      {isLoading ? (
+        <p data-testid="loading-message">Loading tasks...</p>
+      ) : activeTasks.length === 0 && completedTasks.length === 0 ? (
         <p data-testid="empty-message">No tasks yet. Add one to get started!</p>
       ) : (
         <>

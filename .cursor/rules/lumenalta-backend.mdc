@@ -1,0 +1,38 @@
+---
+alwaysApply: true
+---
+
+# Lumenalta Backend MVP — Rules (always on for this folder)
+
+Context
+- Build a tiny REST API for a To-Do app using Node + Express.
+- Save data to a small JSON file on disk (no database).
+
+Role
+- Act as a senior backend pair. Work in small diffs. Explain briefly.
+
+Action
+- Create endpoints:
+  - GET /tasks  → newest first
+  - POST /tasks { title } → trim, reject empty, return full Task
+  - PATCH /tasks/:id/toggle → flip completed
+  - DELETE /tasks/:id → remove
+- Add minimal validation and clear 4xx/5xx messages.
+- Turn on CORS for http://localhost:5173 (the frontend).
+- Default port: 3001.
+
+Quality
+- Task looks like: { id, title, completed, createdAtMs }.
+- Use crypto.randomUUID() when available for id.
+- Keep files small and readable. Add GET /health.
+
+Format
+- Show terminal commands before running; wait for approval.
+- Show short diffs for code changes.
+
+Definition of Done
+- All four endpoints work with basic validation.
+- Data persists across server restarts via JSON file.
+- CORS enabled for localhost:5173.
+- `npm run dev` starts a watcher; `npm start` runs plain node.
+- Provide quick test examples (curl or REST Client).

@@ -13,7 +13,10 @@ export function TaskItem({ task, onToggle, onDelete }: TaskItemProps) {
   };
 
   const handleDeleteClick = () => {
-    onDelete(task.id);
+    const confirmed = window.confirm(`Are you sure you want to delete "${task.title}"?`);
+    if (confirmed) {
+      onDelete(task.id);
+    }
   };
 
   return (

@@ -72,17 +72,36 @@ describe('TaskItem', () => {
     expect(onToggle).toHaveBeenCalledTimes(1);
   });
 
-  it('calls onDelete when delete button is clicked', async () => {
+  it('calls onDelete when delete button is clicked and user confirms', async () => {
     const user = userEvent.setup();
     const onToggle = vi.fn();
     const onDelete = vi.fn();
+    window.confirm = vi.fn(() => true);
+    
     render(<TaskItem task={mockTask} onToggle={onToggle} onDelete={onDelete} />);
     
     const deleteButton = screen.getByTestId('task-delete-test-id-1');
     await user.click(deleteButton);
     
+    expect(window.confirm).toHaveBeenCalledWith('Are you sure you want to delete "Test Task"?');
     expect(onDelete).toHaveBeenCalledWith('test-id-1');
     expect(onDelete).toHaveBeenCalledTimes(1);
+    expect(onToggle).not.toHaveBeenCalled();
+  });
+
+  it('does not call onDelete when delete button is clicked and user cancels', async () => {
+    const user = userEvent.setup();
+    const onToggle = vi.fn();
+    const onDelete = vi.fn();
+    window.confirm = vi.fn(() => false);
+    
+    render(<TaskItem task={mockTask} onToggle={onToggle} onDelete={onDelete} />);
+    
+    const deleteButton = screen.getByTestId('task-delete-test-id-1');
+    await user.click(deleteButton);
+    
+    expect(window.confirm).toHaveBeenCalledWith('Are you sure you want to delete "Test Task"?');
+    expect(onDelete).not.toHaveBeenCalled();
     expect(onToggle).not.toHaveBeenCalled();
   });
 });

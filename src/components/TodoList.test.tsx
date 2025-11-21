@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { TodoList } from './TodoList';
@@ -6,6 +6,7 @@ import { TodoList } from './TodoList';
 describe('TodoList', () => {
   beforeEach(() => {
     localStorage.clear();
+    window.confirm = vi.fn(() => true);
   });
   it('renders the todo list heading', () => {
     render(<TodoList />);
@@ -312,6 +313,30 @@ describe('TodoList', () => {
     expect(screen.queryByText('Completed Task')).not.toBeInTheDocument();
     expect(screen.queryByTestId('completed-tasks-section')).not.toBeInTheDocument();
     expect(screen.getByTestId('empty-message')).toBeInTheDocument();
+  });
+
+  it('does not delete task when user cancels confirmation', async () => {
+    const user = userEvent.setup();
+    window.confirm = vi.fn(() => false);
+    render(<TodoList />);
+    
+    const input = screen.getByTestId('task-input');
+    const button = screen.getByTestId('task-add-button');
+    
+    await user.type(input, 'Task to Keep');
+    await user.click(button);
+    
+    expect(screen.getByText('Task to Keep')).toBeInTheDocument();
+    
+    const taskElement = screen.getByText('Task to Keep').closest('li');
+    const taskId = taskElement?.getAttribute('data-testid')?.replace('task-', '') || '';
+    const deleteButton = screen.getByTestId(`task-delete-${taskId}`);
+    
+    await user.click(deleteButton);
+    
+    expect(window.confirm).toHaveBeenCalledWith('Are you sure you want to delete "Task to Keep"?');
+    expect(screen.getByText('Task to Keep')).toBeInTheDocument();
+    expect(screen.queryByTestId('empty-message')).not.toBeInTheDocument();
   });
 
   describe('localStorage persistence', () => {

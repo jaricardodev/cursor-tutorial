@@ -447,5 +447,205 @@ describe('TodoList', () => {
       expect(screen.getByTestId('empty-message')).toBeInTheDocument();
     });
   });
+
+  describe('list counters', () => {
+    it('displays active tasks count when there are active tasks', async () => {
+      const user = userEvent.setup();
+      render(<TodoList />);
+      
+      const input = screen.getByTestId('task-input');
+      const button = screen.getByTestId('task-add-button');
+      
+      await user.type(input, 'First Task');
+      await user.click(button);
+      
+      await user.type(input, 'Second Task');
+      await user.click(button);
+      
+      const activeCount = screen.getByTestId('active-tasks-count');
+      expect(activeCount).toBeInTheDocument();
+      expect(activeCount).toHaveTextContent('(2)');
+    });
+
+    it('displays completed tasks count when there are completed tasks', async () => {
+      const user = userEvent.setup();
+      render(<TodoList />);
+      
+      const input = screen.getByTestId('task-input');
+      const button = screen.getByTestId('task-add-button');
+      
+      await user.type(input, 'Task to Complete');
+      await user.click(button);
+      
+      const taskElement = screen.getByText('Task to Complete').closest('li');
+      const taskId = taskElement?.getAttribute('data-testid')?.replace('task-', '') || '';
+      const toggleButton = screen.getByTestId(`task-toggle-${taskId}`);
+      await user.click(toggleButton);
+      
+      const completedCount = screen.getByTestId('completed-tasks-count');
+      expect(completedCount).toBeInTheDocument();
+      expect(completedCount).toHaveTextContent('(1)');
+    });
+
+    it('updates active tasks count when a task is added', async () => {
+      const user = userEvent.setup();
+      render(<TodoList />);
+      
+      const input = screen.getByTestId('task-input');
+      const button = screen.getByTestId('task-add-button');
+      
+      await user.type(input, 'First Task');
+      await user.click(button);
+      
+      let activeCount = screen.getByTestId('active-tasks-count');
+      expect(activeCount).toHaveTextContent('(1)');
+      
+      await user.type(input, 'Second Task');
+      await user.click(button);
+      
+      activeCount = screen.getByTestId('active-tasks-count');
+      expect(activeCount).toHaveTextContent('(2)');
+    });
+
+    it('updates active tasks count when a task is completed', async () => {
+      const user = userEvent.setup();
+      render(<TodoList />);
+      
+      const input = screen.getByTestId('task-input');
+      const button = screen.getByTestId('task-add-button');
+      
+      await user.type(input, 'First Task');
+      await user.click(button);
+      
+      await user.type(input, 'Second Task');
+      await user.click(button);
+      
+      let activeCount = screen.getByTestId('active-tasks-count');
+      expect(activeCount).toHaveTextContent('(2)');
+      
+      const taskElement = screen.getByText('First Task').closest('li');
+      const taskId = taskElement?.getAttribute('data-testid')?.replace('task-', '') || '';
+      const toggleButton = screen.getByTestId(`task-toggle-${taskId}`);
+      await user.click(toggleButton);
+      
+      activeCount = screen.getByTestId('active-tasks-count');
+      expect(activeCount).toHaveTextContent('(1)');
+      
+      const completedCount = screen.getByTestId('completed-tasks-count');
+      expect(completedCount).toHaveTextContent('(1)');
+    });
+
+    it('updates completed tasks count when a task is uncompleted', async () => {
+      const user = userEvent.setup();
+      render(<TodoList />);
+      
+      const input = screen.getByTestId('task-input');
+      const button = screen.getByTestId('task-add-button');
+      
+      await user.type(input, 'Task to Toggle');
+      await user.click(button);
+      
+      const taskElement = screen.getByText('Task to Toggle').closest('li');
+      const taskId = taskElement?.getAttribute('data-testid')?.replace('task-', '') || '';
+      const toggleButton = screen.getByTestId(`task-toggle-${taskId}`);
+      await user.click(toggleButton);
+      
+      let completedCount = screen.getByTestId('completed-tasks-count');
+      expect(completedCount).toHaveTextContent('(1)');
+      
+      const completedToggleButton = screen.getByTestId(`task-toggle-${taskId}`);
+      await user.click(completedToggleButton);
+      
+      expect(screen.queryByTestId('completed-tasks-count')).not.toBeInTheDocument();
+      const activeCount = screen.getByTestId('active-tasks-count');
+      expect(activeCount).toHaveTextContent('(1)');
+    });
+
+    it('updates active tasks count when a task is deleted', async () => {
+      const user = userEvent.setup();
+      render(<TodoList />);
+      
+      const input = screen.getByTestId('task-input');
+      const button = screen.getByTestId('task-add-button');
+      
+      await user.type(input, 'First Task');
+      await user.click(button);
+      
+      await user.type(input, 'Second Task');
+      await user.click(button);
+      
+      let activeCount = screen.getByTestId('active-tasks-count');
+      expect(activeCount).toHaveTextContent('(2)');
+      
+      const taskElement = screen.getByText('First Task').closest('li');
+      const taskId = taskElement?.getAttribute('data-testid')?.replace('task-', '') || '';
+      const deleteButton = screen.getByTestId(`task-delete-${taskId}`);
+      await user.click(deleteButton);
+      
+      activeCount = screen.getByTestId('active-tasks-count');
+      expect(activeCount).toHaveTextContent('(1)');
+    });
+
+    it('updates completed tasks count when a completed task is deleted', async () => {
+      const user = userEvent.setup();
+      render(<TodoList />);
+      
+      const input = screen.getByTestId('task-input');
+      const button = screen.getByTestId('task-add-button');
+      
+      await user.type(input, 'Task to Complete');
+      await user.click(button);
+      
+      const taskElement = screen.getByText('Task to Complete').closest('li');
+      const taskId = taskElement?.getAttribute('data-testid')?.replace('task-', '') || '';
+      const toggleButton = screen.getByTestId(`task-toggle-${taskId}`);
+      await user.click(toggleButton);
+      
+      let completedCount = screen.getByTestId('completed-tasks-count');
+      expect(completedCount).toHaveTextContent('(1)');
+      
+      const deleteButton = screen.getByTestId(`task-delete-${taskId}`);
+      await user.click(deleteButton);
+      
+      expect(screen.queryByTestId('completed-tasks-count')).not.toBeInTheDocument();
+      expect(screen.queryByTestId('completed-tasks-section')).not.toBeInTheDocument();
+    });
+
+    it('displays correct counts for multiple tasks in both lists', async () => {
+      const user = userEvent.setup();
+      render(<TodoList />);
+      
+      const input = screen.getByTestId('task-input');
+      const button = screen.getByTestId('task-add-button');
+      
+      await user.type(input, 'Task 1');
+      await user.click(button);
+      
+      await user.type(input, 'Task 2');
+      await user.click(button);
+      
+      await user.type(input, 'Task 3');
+      await user.click(button);
+      
+      let activeCount = screen.getByTestId('active-tasks-count');
+      expect(activeCount).toHaveTextContent('(3)');
+      
+      const task2Element = screen.getByText('Task 2').closest('li');
+      const task2Id = task2Element?.getAttribute('data-testid')?.replace('task-', '') || '';
+      const toggleTask2 = screen.getByTestId(`task-toggle-${task2Id}`);
+      await user.click(toggleTask2);
+      
+      const task3Element = screen.getByText('Task 3').closest('li');
+      const task3Id = task3Element?.getAttribute('data-testid')?.replace('task-', '') || '';
+      const toggleTask3 = screen.getByTestId(`task-toggle-${task3Id}`);
+      await user.click(toggleTask3);
+      
+      activeCount = screen.getByTestId('active-tasks-count');
+      expect(activeCount).toHaveTextContent('(1)');
+      
+      const completedCount = screen.getByTestId('completed-tasks-count');
+      expect(completedCount).toHaveTextContent('(2)');
+    });
+  });
 });
 

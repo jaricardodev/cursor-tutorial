@@ -74,7 +74,10 @@ export function TodoList() {
         <>
           {activeTasks.length > 0 && (
             <div data-testid="active-tasks-section">
-              <h2>Active Tasks</h2>
+              <h2>
+                Active Tasks{' '}
+                <span data-testid="active-tasks-count">({activeTasks.length})</span>
+              </h2>
               <ul data-testid="task-list">
                 {activeTasks.map((task) => (
                   <TaskItem
@@ -89,7 +92,10 @@ export function TodoList() {
           )}
           {completedTasks.length > 0 && (
             <div data-testid="completed-tasks-section">
-              <h2>Completed Tasks</h2>
+              <h2>
+                Completed Tasks{' '}
+                <span data-testid="completed-tasks-count">({completedTasks.length})</span>
+              </h2>
               <ul data-testid="completed-task-list">
                 {completedTasks.map((task) => (
                   <TaskItem

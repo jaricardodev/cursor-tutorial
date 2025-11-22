@@ -92,6 +92,59 @@ ul {
   margin: 0;
 }
 
+/* Scrollable task lists for mobile */
+ul[data-testid="task-list"],
+ul[data-testid="completed-task-list"] {
+  max-height: 50vh;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-right: 0.5rem;
+  /* Smooth scrolling */
+  scroll-behavior: smooth;
+  /* Custom scrollbar styling for better mobile experience */
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Custom scrollbar styling */
+ul[data-testid="task-list"]::-webkit-scrollbar,
+ul[data-testid="completed-task-list"]::-webkit-scrollbar {
+  width: 6px;
+}
+
+ul[data-testid="task-list"]::-webkit-scrollbar-track,
+ul[data-testid="completed-task-list"]::-webkit-scrollbar-track {
+  background: var(--list-item-bg);
+  border-radius: 4px;
+}
+
+ul[data-testid="task-list"]::-webkit-scrollbar-thumb,
+ul[data-testid="completed-task-list"]::-webkit-scrollbar-thumb {
+  background: var(--text-secondary);
+  border-radius: 4px;
+  opacity: 0.5;
+}
+
+ul[data-testid="task-list"]::-webkit-scrollbar-thumb:hover,
+ul[data-testid="completed-task-list"]::-webkit-scrollbar-thumb:hover {
+  opacity: 0.8;
+}
+
+/* Mobile-specific adjustments */
+@media (max-width: 768px) {
+  ul[data-testid="task-list"],
+  ul[data-testid="completed-task-list"] {
+    max-height: 40vh;
+    padding-right: 0.25rem;
+  }
+}
+
+@media (max-width: 480px) {
+  ul[data-testid="task-list"],
+  ul[data-testid="completed-task-list"] {
+    max-height: 35vh;
+  }
+}
+
 li {
   display: flex;
   align-items: center;

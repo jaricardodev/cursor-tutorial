@@ -10,8 +10,14 @@
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "test": "vitest",
-    "test:ui": "vitest --ui"
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:ui": "vitest --ui",
+    "test:backend": "TEST_DATA_FILE=backend/data/test/tasks.json vitest run --config vitest.backend.config.ts",
+    "test:backend:watch": "TEST_DATA_FILE=backend/data/test/tasks.json vitest watch --config vitest.backend.config.ts",
+    "test:e2e": "playwright test",
+    "test:ui:headed": "playwright test --headed",
+    "test:ui:debug": "playwright test --debug"
   },
   "dependencies": {
     "cors": "^2.8.5",
@@ -21,6 +27,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",
+    "@playwright/test": "^1.56.1",
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^16.1.0",
     "@testing-library/user-event": "^14.5.2",
@@ -29,6 +36,7 @@
     "@types/node": "^24.10.1",
     "@types/react": "^19.2.5",
     "@types/react-dom": "^19.2.3",
+    "@types/supertest": "^6.0.3",
     "@vitejs/plugin-react": "^5.1.1",
     "@vitest/ui": "^2.1.8",
     "eslint": "^9.39.1",
@@ -37,6 +45,7 @@
     "globals": "^16.5.0",
     "jsdom": "^25.0.1",
     "nodemon": "^3.1.11",
+    "supertest": "^7.1.4",
     "tsx": "^4.20.6",
     "typescript": "~5.9.3",
     "typescript-eslint": "^8.46.4",

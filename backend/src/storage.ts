@@ -2,7 +2,9 @@ import { readFileSync, writeFileSync, existsSync } from 'fs';
 import { join } from 'path';
 import type { Task } from './types.js';
 
-const DATA_FILE = join(process.cwd(), 'backend', 'data', 'tasks.json');
+const DATA_FILE = process.env.TEST_DATA_FILE 
+  ? join(process.cwd(), process.env.TEST_DATA_FILE)
+  : join(process.cwd(), 'backend', 'data', 'tasks.json');
 
 function readTasks(): Task[] {
   try {
@@ -37,4 +39,3 @@ export function getTaskById(id: string): Task | undefined {
   const tasks = readTasks();
   return tasks.find((task) => task.id === id);
 }
-

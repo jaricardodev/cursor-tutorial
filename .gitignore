@@ -23,3 +23,9 @@ dist-ssr
 *.sln
 *.sw?
 backend/data/tasks.json
+
+# Test data
+backend/data/test/
+test-results/
+.gitignore
+playwright-report/
